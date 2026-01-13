@@ -46,22 +46,23 @@ jobs:
     # ======================================================
 
     # Step 7: Menjalankan Selenium Firefox container
-    # - Menggunakan network isolated
-    # - Port 4444 untuk Selenium Hub
-    # - Port 7900 untuk VNC Viewer
-    # - /dev/shm untuk meningkatkan performa browser
     - name: Selenium Preparation
       run: docker run --network=isolated -d -p 4444:4444 -p 7900:7900 \
            -v /dev/shm:/dev/shm \
            --name firefox-standalone selenium/standalone-firefox:latest
 
-    # Step 8: Menunggu Selenium Hub sampai siap digunakan
-    - name: Wait for Selenium Hub
-      run: sh wait.sh
+    - name: Wait a bit for Selenium
+      run: sleep 10
 
-    # Step 9: Mengecek apakah Selenium Hub sudah aktif
+    - name: Make wait.sh executable
+      run: chmod +x wait.sh
+
+    - name: Wait for Selenium Hub
+      run: ./wait.sh
+
     - name: Check the Hub
       run: curl http://localhost:4444/ui
+
 
     # ======================================================
     # =============== CLEANUP ===============================
