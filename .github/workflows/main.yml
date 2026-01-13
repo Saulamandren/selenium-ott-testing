@@ -61,14 +61,24 @@ jobs:
 
     # Step 10: Tunggu sampai Selenium UI siap
     - name: Wait for Selenium Hub
-      run: ./wait.sh
+      run: sh wait.sh
 
     # Step 11: Verifikasi Selenium UI bisa diakses
     - name: Check the Hub
       run: curl http://localhost:4444/ui
 
+    # ================= TEST =================
+
+    # Step 12: Install Selenium client (Python)
+    - name: Install Selenium client
+      run: pip install -U selenium
+
+    # Step 13: Jalankan test otomatis
+    - name: Run test
+      run: python tests/hello_example.py
+
     # ================= CLEANUP =================
 
-    # Step 12: Stop AUT container
-    - name: Stop docker
+    # Step 14: Stop AUT container
+    - name: stop docker
       run: docker stop docker-apache
