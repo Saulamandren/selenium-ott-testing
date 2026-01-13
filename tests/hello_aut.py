@@ -30,7 +30,7 @@ class AutTest(unittest.TestCase):
             url = "http://docker-apache"
 
         self.browser.get(url)
-
+        self.browser.save_screenshot('screenshot.png')
         expected_result = "Welcome back, Guest!"
 
         wait = WebDriverWait(self.browser, 15)

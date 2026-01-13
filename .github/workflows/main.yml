@@ -15,35 +15,55 @@ jobs:
 
     steps:
 
-    # Step 1: Checkout repository
+    # ======================================================
+    # STEP 1 — Checkout repository
+    # ======================================================
     - name: Checkout the repo
       uses: actions/checkout@v4
 
-    # Step 2: Membuat Docker network
+
+    # ======================================================
+    # STEP 2 — Buat Docker network terisolasi
+    # ======================================================
     - name: Create isolated network
       run: docker network create --driver bridge isolated
 
-    # Step 3: Build AUT
+
+    # ======================================================
+    # STEP 3 — Build AUT (PHP + Apache)
+    # ======================================================
     - name: Deploy AUT
       run: docker build -t my-php-site:latest .
 
-    # Step 4: Run AUT
-    - name: Run AUT
-      run: docker run --network=isolated -p 80:80 --name docker-apache -t -d my-php-site:latest
 
-    # Step 5: Ambil URL AUT
+    # ======================================================
+    # STEP 4 — Jalankan AUT di Docker
+    # ======================================================
+    - name: Run AUT
+      run: docker run --network=isolated -p 80:80 --name docker-apache -d my-php-site:latest
+
+
+    # ======================================================
+    # STEP 5 — Ambil URL AUT
+    # ======================================================
     - name: Get AUT URL
       run: |
         URL=http://$(ip -f inet -o addr show docker0 | awk '{print $4}' | cut -d '/' -f 1)
         echo "URL=$URL" >> $GITHUB_ENV
 
-    # Step 6: Cek AUT
+
+    # ======================================================
+    # STEP 6 — Cek AUT bisa diakses
+    # ======================================================
     - name: Check AUT Url
       run: curl ${{ env.URL }}
 
-    # ================= SELENIUM =================
 
-    # Step 7: Jalankan Selenium Firefox container
+    # ======================================================
+    # ================== SELENIUM ==========================
+    # ======================================================
+
+    # STEP 7 — Jalankan Selenium Firefox Container
     - name: Selenium Preparation
       run: |
         docker run --network=isolated -d \
@@ -51,34 +71,57 @@ jobs:
         -v /dev/shm:/dev/shm \
         --name firefox-standalone selenium/standalone-firefox:latest
 
-    # Step 8: Tunggu Selenium boot awal
+
+    # STEP 8 — Tunggu Selenium boot awal
     - name: Wait for Selenium boot
       run: sleep 15
 
-    # Step 9: Izinkan eksekusi wait.sh di Linux runner
+
+    # STEP 9 — Izinkan eksekusi wait.sh
     - name: Make wait.sh executable
       run: chmod +x wait.sh
 
-    # Step 10: Tunggu sampai Selenium UI siap
-    - name: Wait for Selenium Hub
-      run: sh wait.sh
 
-    # Step 11: Verifikasi Selenium UI bisa diakses
+    # STEP 10 — Tunggu Selenium benar-benar siap
+    - name: Wait for Selenium Hub
+      run: ./wait.sh
+
+
+    # STEP 11 — Cek Selenium UI
     - name: Check the Hub
       run: curl http://localhost:4444/ui
 
-    # ================= TEST =================
 
-    # Step 12: Install Selenium client (Python)
+    # ======================================================
+    # ================== AUTOMATION ========================
+    # ======================================================
+
+    # STEP 12 — Install Selenium client Python
     - name: Install Selenium client
       run: pip install -U selenium
 
-    # Step 13: Jalankan test otomatis
+
+    # STEP 13 — Jalankan automation test AUT
     - name: Run test
       run: python tests/hello_aut.py ${{ env.URL }}
 
-    # ================= CLEANUP =================
 
-    # Step 14: Stop AUT container
-    - name: stop docker
+    # ======================================================
+    # ================== ARTIFACT ==========================
+    # ======================================================
+
+    # STEP 14 — Upload Screenshot sebagai Artifact
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Screenshot
+        path: screenshot.png
+
+
+    # ======================================================
+    # ================== CLEANUP ===========================
+    # ======================================================
+
+    # STEP 15 — Stop container AUT
+    - name: Stop docker
       run: docker stop docker-apache
