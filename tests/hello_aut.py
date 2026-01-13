@@ -26,14 +26,14 @@ class AutTest(unittest.TestCase):
         if len(sys.argv) > 1:
             url = sys.argv[1]
         else:
+            # akses AUT via docker network
             url = "http://docker-apache"
 
         self.browser.get(url)
 
         expected_result = "Welcome back, Guest!"
 
-        # Tunggu sampai elemen <p> muncul
-        wait = WebDriverWait(self.browser, 10)
+        wait = WebDriverWait(self.browser, 15)
         element = wait.until(
             EC.presence_of_element_located((By.TAG_NAME, "p"))
         )
