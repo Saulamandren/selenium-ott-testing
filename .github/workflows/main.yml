@@ -1,16 +1,23 @@
+    # ================= SELENIUM =================
+
     - name: Selenium Preparation
-      run: docker run --network=isolated -d -p 4444:4444 -p 7900:7900 \
+      run: docker run --network=isolated -d \
+           -p 4444:4444 -p 7900:7900 \
            -v /dev/shm:/dev/shm \
            --name firefox-standalone selenium/standalone-firefox:latest
 
+    # beri waktu boot awal
     - name: Wait for Selenium boot
       run: sleep 15
 
+    # pastikan script bisa dieksekusi di Linux runner
     - name: Make wait.sh executable
       run: chmod +x wait.sh
 
+    # tunggu sampai Selenium benar-benar ready
     - name: Wait for Selenium Hub
       run: ./wait.sh
 
+    # verifikasi UI Selenium bisa diakses
     - name: Check the Hub
       run: curl http://localhost:4444/ui
