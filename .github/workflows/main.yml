@@ -9,9 +9,14 @@ on:
 
 jobs:
   test:
-    name: Functional Test
+    name: Functional Test (${{ matrix.browser }})
     permissions: write-all
     runs-on: ubuntu-latest
+
+    # Parallel browser matrix
+    strategy:
+      matrix:
+        browser: [firefox, chrome, edge]
 
     steps:
 
@@ -63,13 +68,13 @@ jobs:
     # ================== SELENIUM ==========================
     # ======================================================
 
-    # STEP 7 — Jalankan Selenium Firefox Container
+    # STEP 7 — Jalankan Selenium Standalone (support multi browser)
     - name: Selenium Preparation
       run: |
         docker run --network=isolated -d \
         -p 4444:4444 -p 7900:7900 \
         -v /dev/shm:/dev/shm \
-        --name firefox-standalone selenium/standalone-firefox:latest
+        --name selenium-standalone selenium/standalone-firefox:latest
 
 
     # STEP 8 — Tunggu Selenium boot awal
@@ -101,21 +106,21 @@ jobs:
       run: pip install -U selenium
 
 
-    # STEP 13 — Jalankan automation test AUT
-    - name: Run test
-      run: python tests/hello_aut.py ${{ env.URL }}
+    # STEP 13 — Jalankan automation test AUT sesuai browser
+    - name: Run AUT test on ${{ matrix.browser }}
+      run: python tests/aut_homepage_test.py ${{ matrix.browser }} ${{ env.URL }}
 
 
     # ======================================================
     # ================== ARTIFACT ==========================
     # ======================================================
 
-    # STEP 14 — Upload Screenshot sebagai Artifact
-    - name: Upload Artifact
+    # STEP 14 — Upload Screenshot per browser sebagai Artifact
+    - name: Upload Screenshot ${{ matrix.browser }}
       uses: actions/upload-artifact@v4
       with:
-        name: Screenshot
-        path: screenshot.png
+        name: AUT-${{ matrix.browser }}
+        path: aut_${{ matrix.browser }}.png
 
 
     # ======================================================
