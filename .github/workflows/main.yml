@@ -1,5 +1,7 @@
+# Nama workflow
 name: OTT Testing
 
+# Workflow dijalankan setiap ada push ke branch main
 on:
   push:
     branches:
@@ -12,25 +14,59 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+    # Step 1: Mengambil source code dari repository
     - name: Checkout the repo
       uses: actions/checkout@v4
 
+    # Step 2: Membuat Docker network terisolasi
     - name: Create isolated network
       run: docker network create --driver bridge isolated
 
+    # Step 3: Build image AUT dari Dockerfile
     - name: Deploy AUT
       run: docker build -t my-php-site:latest .
 
+    # Step 4: Menjalankan AUT di dalam container Docker
     - name: Run AUT
       run: docker run --network=isolated -p 80:80 --name docker-apache -t -d my-php-site:latest
 
+    # Step 5: Mengambil IP Docker dan membentuk URL AUT
     - name: Get AUT URL
       run: |
         URL=http://$(ip -f inet -o addr show docker0 | awk '{print $4}' | cut -d '/' -f 1)
         echo "URL=$URL" >> $GITHUB_ENV
 
+    # Step 6: Mengecek apakah AUT dapat diakses
     - name: Check AUT Url
       run: curl ${{ env.URL }}
 
+    # ======================================================
+    # =============== BAGIAN SELENIUM ======================
+    # ======================================================
+
+    # Step 7: Menjalankan Selenium Firefox container
+    # - Menggunakan network isolated
+    # - Port 4444 untuk Selenium Hub
+    # - Port 7900 untuk VNC Viewer
+    # - /dev/shm untuk meningkatkan performa browser
+    - name: Selenium Preparation
+      run: docker run --network=isolated -d -p 4444:4444 -p 7900:7900 \
+           -v /dev/shm:/dev/shm \
+           --name firefox-standalone selenium/standalone-firefox:latest
+
+    # Step 8: Menunggu Selenium Hub sampai siap digunakan
+    - name: Wait for Selenium Hub
+      run: sh wait.sh
+
+    # Step 9: Mengecek apakah Selenium Hub sudah aktif
+    - name: Check the Hub
+      run: curl http://localhost:4444/ui
+
+    # ======================================================
+    # =============== CLEANUP ===============================
+    # ======================================================
+
+    # Step 10: Menghentikan container AUT setelah selesai
     - name: stop docker
       run: docker stop docker-apache
