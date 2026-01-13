@@ -68,13 +68,14 @@ jobs:
     # ================== SELENIUM ==========================
     # ======================================================
 
-    # STEP 7 — Jalankan Selenium Standalone (support multi browser)
-    - name: Selenium Preparation
+    # STEP 7 — Jalankan Selenium sesuai browser matrix
+    - name: Selenium Preparation (${{ matrix.browser }})
       run: |
         docker run --network=isolated -d \
         -p 4444:4444 -p 7900:7900 \
         -v /dev/shm:/dev/shm \
-        --name selenium-standalone selenium/standalone-firefox:latest
+        --name selenium-${{ matrix.browser }} \
+        selenium/standalone-${{ matrix.browser }}:latest
 
 
     # STEP 8 — Tunggu Selenium boot awal
@@ -127,6 +128,10 @@ jobs:
     # ================== CLEANUP ===========================
     # ======================================================
 
-    # STEP 15 — Stop container AUT
-    - name: Stop docker
+    # STEP 15 — Stop Selenium container
+    - name: Stop Selenium
+      run: docker stop selenium-${{ matrix.browser }}
+
+    # STEP 16 — Stop AUT container
+    - name: Stop AUT
       run: docker stop docker-apache
