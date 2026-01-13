@@ -75,7 +75,7 @@ jobs:
 
     # Step 13: Jalankan test otomatis
     - name: Run test
-    - run: python tests/hello_aut.py ${{ env.URL }}
+      run: python tests/hello_aut.py ${{ env.URL }}
 
     # ================= CLEANUP =================
 
