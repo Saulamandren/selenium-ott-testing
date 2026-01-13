@@ -43,7 +43,7 @@ jobs:
 
     # ================= SELENIUM =================
 
-    # Step 7: Jalankan Selenium
+    # Step 7: Jalankan Selenium Firefox container
     - name: Selenium Preparation
       run: |
         docker run --network=isolated -d \
@@ -51,23 +51,24 @@ jobs:
         -v /dev/shm:/dev/shm \
         --name firefox-standalone selenium/standalone-firefox:latest
 
-    # Step 8: Tunggu boot Selenium
+    # Step 8: Tunggu Selenium boot awal
     - name: Wait for Selenium boot
       run: sleep 15
 
-    # Step 9: Izinkan eksekusi wait.sh
+    # Step 9: Izinkan eksekusi wait.sh di Linux runner
     - name: Make wait.sh executable
       run: chmod +x wait.sh
 
-    # Step 10: Tunggu Selenium ready
+    # Step 10: Tunggu sampai Selenium UI siap
     - name: Wait for Selenium Hub
       run: ./wait.sh
 
-    # Step 11: Cek Selenium UI
+    # Step 11: Verifikasi Selenium UI bisa diakses
     - name: Check the Hub
       run: curl http://localhost:4444/ui
 
     # ================= CLEANUP =================
 
+    # Step 12: Stop AUT container
     - name: Stop docker
       run: docker stop docker-apache
