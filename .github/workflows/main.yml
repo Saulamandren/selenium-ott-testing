@@ -1,23 +1,73 @@
+# Nama workflow
+name: OTT Testing
+
+# Workflow dijalankan setiap ada push ke branch main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Functional Test
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # Step 1: Checkout repository
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+
+    # Step 2: Membuat Docker network
+    - name: Create isolated network
+      run: docker network create --driver bridge isolated
+
+    # Step 3: Build AUT
+    - name: Deploy AUT
+      run: docker build -t my-php-site:latest .
+
+    # Step 4: Run AUT
+    - name: Run AUT
+      run: docker run --network=isolated -p 80:80 --name docker-apache -t -d my-php-site:latest
+
+    # Step 5: Ambil URL AUT
+    - name: Get AUT URL
+      run: |
+        URL=http://$(ip -f inet -o addr show docker0 | awk '{print $4}' | cut -d '/' -f 1)
+        echo "URL=$URL" >> $GITHUB_ENV
+
+    # Step 6: Cek AUT
+    - name: Check AUT Url
+      run: curl ${{ env.URL }}
+
     # ================= SELENIUM =================
 
+    # Step 7: Jalankan Selenium
     - name: Selenium Preparation
-      run: docker run --network=isolated -d \
-           -p 4444:4444 -p 7900:7900 \
-           -v /dev/shm:/dev/shm \
-           --name firefox-standalone selenium/standalone-firefox:latest
+      run: |
+        docker run --network=isolated -d \
+        -p 4444:4444 -p 7900:7900 \
+        -v /dev/shm:/dev/shm \
+        --name firefox-standalone selenium/standalone-firefox:latest
 
-    # beri waktu boot awal
+    # Step 8: Tunggu boot Selenium
     - name: Wait for Selenium boot
       run: sleep 15
 
-    # pastikan script bisa dieksekusi di Linux runner
+    # Step 9: Izinkan eksekusi wait.sh
     - name: Make wait.sh executable
       run: chmod +x wait.sh
 
-    # tunggu sampai Selenium benar-benar ready
+    # Step 10: Tunggu Selenium ready
     - name: Wait for Selenium Hub
       run: ./wait.sh
 
-    # verifikasi UI Selenium bisa diakses
+    # Step 11: Cek Selenium UI
     - name: Check the Hub
       run: curl http://localhost:4444/ui
+
+    # ================= CLEANUP =================
+
+    - name: Stop docker
+      run: docker stop docker-apache
